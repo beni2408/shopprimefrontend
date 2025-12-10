@@ -7,6 +7,7 @@ import './Navbar.css';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const { user, isAuthenticated, logout } = useAuth();
   const { getCartCount } = useCart();
   const navigate = useNavigate();
@@ -14,6 +15,13 @@ const Navbar = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
+    }
   };
 
   return (
@@ -24,10 +32,15 @@ const Navbar = () => {
             ShopPrime
           </Link>
 
-          <div className="nav-search">
-            <input type="text" placeholder="Search products..." />
-            <button><FaSearch /></button>
-          </div>
+          <form className="nav-search" onSubmit={handleSearch}>
+            <input 
+              type="text" 
+              placeholder="Search products..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button type="submit"><FaSearch /></button>
+          </form>
 
           <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
             <Link to="/products" onClick={() => setIsMenuOpen(false)}>

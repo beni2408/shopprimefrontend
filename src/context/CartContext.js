@@ -6,22 +6,40 @@ const CartContext = createContext();
 
 const cartReducer = (state, action) => {
   switch (action.type) {
-    case 'SET_CART':
+    case 'ADD_ITEM':
+      const existingItem = state.items.find(item => item.id === action.payload.id);
+      if (existingItem) {
+        return {
+          ...state,
+          items: state.items.map(item =>
+            item.id === action.payload.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          )
+        };
+      }
       return {
         ...state,
-        items: action.payload.items || [],
-        loading: false
+        items: [...state.items, { ...action.payload, quantity: 1 }]
       };
-    case 'SET_LOADING':
+    case 'UPDATE_QUANTITY':
       return {
         ...state,
-        loading: action.payload
+        items: state.items.map(item =>
+          item.id === action.payload.id
+            ? { ...item, quantity: action.payload.quantity }
+            : item
+        )
+      };
+    case 'REMOVE_ITEM':
+      return {
+        ...state,
+        items: state.items.filter(item => item.id !== action.payload)
       };
     case 'CLEAR_CART':
       return {
         ...state,
-        items: [],
-        loading: false
+        items: []
       };
     default:
       return state;
@@ -30,65 +48,34 @@ const cartReducer = (state, action) => {
 
 export const CartProvider = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, {
-    items: [],
-    loading: false
+    items: JSON.parse(localStorage.getItem('cart') || '[]')
   });
 
-  const { isAuthenticated } = useAuth();
-
   useEffect(() => {
-    if (isAuthenticated) {
-      loadCart();
-    }
-  }, [isAuthenticated]);
+    localStorage.setItem('cart', JSON.stringify(state.items));
+  }, [state.items]);
 
-  const loadCart = async () => {
+  const addToCart = async (product) => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      const res = await axios.get('/api/cart');
-      dispatch({ type: 'SET_CART', payload: res.data });
+      dispatch({ type: 'ADD_ITEM', payload: product });
+      return { success: true };
     } catch (error) {
-      dispatch({ type: 'SET_LOADING', payload: false });
+      return { success: false, message: 'Failed to add to cart' };
     }
   };
 
-  const addToCart = async (productId, quantity = 1) => {
-    try {
-      const res = await axios.post('/api/cart', { productId, quantity });
-      dispatch({ type: 'SET_CART', payload: res.data });
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Failed to add to cart'
-      };
+  const updateQuantity = (id, quantity) => {
+    if (quantity <= 0) {
+      dispatch({ type: 'REMOVE_ITEM', payload: id });
+    } else {
+      dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
     }
+    return { success: true };
   };
 
-  const updateQuantity = async (itemId, quantity) => {
-    try {
-      const res = await axios.put(`/api/cart/${itemId}`, { quantity });
-      dispatch({ type: 'SET_CART', payload: res.data });
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Failed to update quantity'
-      };
-    }
-  };
-
-  const removeFromCart = async (itemId) => {
-    try {
-      const res = await axios.delete(`/api/cart/${itemId}`);
-      dispatch({ type: 'SET_CART', payload: res.data });
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Failed to remove item'
-      };
-    }
+  const removeFromCart = (id) => {
+    dispatch({ type: 'REMOVE_ITEM', payload: id });
+    return { success: true };
   };
 
   const clearCart = () => {
@@ -97,8 +84,7 @@ export const CartProvider = ({ children }) => {
 
   const getCartTotal = () => {
     return state.items.reduce((total, item) => {
-      const price = item.product.discountPrice || item.product.price;
-      return total + (price * item.quantity);
+      return total + (item.price * item.quantity);
     }, 0);
   };
 
@@ -114,8 +100,7 @@ export const CartProvider = ({ children }) => {
       removeFromCart,
       clearCart,
       getCartTotal,
-      getCartCount,
-      loadCart
+      getCartCount
     }}>
       {children}
     </CartContext.Provider>

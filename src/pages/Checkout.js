@@ -55,20 +55,15 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      const orderData = {
-        shippingAddress,
-        couponCode: discount > 0 ? couponCode : undefined,
-        paymentId: 'demo_payment_' + Date.now() // Demo payment ID
-      };
-
-      await axios.post('/api/orders', orderData);
-      
-      clearCart();
-      toast.success('Order placed successfully!');
-      navigate('/orders');
+      // Simulate order placement
+      setTimeout(() => {
+        clearCart();
+        toast.success('Order placed successfully!');
+        navigate('/');
+        setLoading(false);
+      }, 1000);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to place order');
-    } finally {
+      toast.error('Failed to place order');
       setLoading(false);
     }
   };
@@ -176,9 +171,9 @@ const Checkout = () => {
             <h3>Order Summary</h3>
             
             {items.map(item => (
-              <div key={item._id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <span>{item.product.name} x {item.quantity}</span>
-                <span>₹{(item.product.discountPrice || item.product.price) * item.quantity}</span>
+              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span>{item.title} x {item.quantity}</span>
+                <span>${(item.price * item.quantity).toFixed(2)}</span>
               </div>
             ))}
             
@@ -186,26 +181,26 @@ const Checkout = () => {
             
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <span>Subtotal:</span>
-              <span>₹{subtotal}</span>
+              <span>${subtotal.toFixed(2)}</span>
             </div>
             
             {discount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#28a745' }}>
                 <span>Discount:</span>
-                <span>-₹{discount}</span>
+                <span>-${discount.toFixed(2)}</span>
               </div>
             )}
             
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <span>Delivery:</span>
-              <span>{deliveryCharge === 0 ? 'Free' : `₹${deliveryCharge}`}</span>
+              <span>{deliveryCharge === 0 ? 'Free' : `$${deliveryCharge}`}</span>
             </div>
             
             <hr />
             
             <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1rem' }}>
               <span>Total:</span>
-              <span>₹{total}</span>
+              <span>${total.toFixed(2)}</span>
             </div>
             
             <div style={{ marginTop: '1rem' }}>

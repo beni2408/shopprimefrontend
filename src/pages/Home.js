@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../utils/api';
 import './Home.css';
 
 const Home = () => {
@@ -15,7 +16,7 @@ const Home = () => {
 
   const fetchFeaturedProducts = async () => {
     try {
-      const res = await axios.get('/api/products?limit=8');
+      const res = await axios.get(`${API_BASE_URL}/api/products?limit=8`);
       setFeaturedProducts(res.data.products.filter(p => p.isFeatured));
     } catch (error) {
       console.error('Error fetching featured products:', error);
@@ -24,7 +25,7 @@ const Home = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get('/api/products/categories/all');
+      const res = await axios.get(`${API_BASE_URL}/api/products/categories/all`);
       setCategories(res.data);
       setLoading(false);
     } catch (error) {

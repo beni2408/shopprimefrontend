@@ -6,25 +6,17 @@ import { useCart } from '../context/CartContext';
 import './Cart.css';
 
 const Cart = () => {
-  const { items, updateQuantity, removeFromCart, getCartTotal, loading } = useCart();
+  const { items, updateQuantity, removeFromCart, getCartTotal } = useCart();
   const navigate = useNavigate();
 
-  const handleQuantityChange = async (itemId, newQuantity) => {
+  const handleQuantityChange = (itemId, newQuantity) => {
     if (newQuantity < 1) return;
-    
-    const result = await updateQuantity(itemId, newQuantity);
-    if (!result.success) {
-      toast.error(result.message);
-    }
+    updateQuantity(itemId, newQuantity);
   };
 
-  const handleRemoveItem = async (itemId) => {
-    const result = await removeFromCart(itemId);
-    if (result.success) {
-      toast.success('Item removed from cart');
-    } else {
-      toast.error(result.message);
-    }
+  const handleRemoveItem = (itemId) => {
+    removeFromCart(itemId);
+    toast.success('Item removed from cart');
   };
 
   const handleCheckout = () => {
@@ -35,9 +27,7 @@ const Cart = () => {
     navigate('/checkout');
   };
 
-  if (loading) {
-    return <div className="loading">Loading cart...</div>;
-  }
+
 
   if (items.length === 0) {
     return (
@@ -66,8 +56,8 @@ const Cart = () => {
               <div key={item._id} className="cart-item">
                 <div className="item-image">
                   <img 
-                    src={item.product.images[0] || '/placeholder.jpg'} 
-                    alt={item.product.name}
+                    src={item.image || '/placeholder.jpg'} 
+                    alt={item.title}
                     onError={(e) => {
                       e.target.src = '/placeholder.jpg';
                     }}
@@ -75,34 +65,34 @@ const Cart = () => {
                 </div>
                 
                 <div className="item-details">
-                  <h3>{item.product.name}</h3>
+                  <h3>{item.title}</h3>
                   <p className="item-price">
-                    ₹{item.product.discountPrice || item.product.price}
+                    ${item.price}
                   </p>
                 </div>
                 
                 <div className="quantity-controls">
                   <button 
-                    onClick={() => handleQuantityChange(item._id, item.quantity - 1)}
+                    onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                     disabled={item.quantity <= 1}
                   >
                     <FaMinus />
                   </button>
                   <span>{item.quantity}</span>
                   <button 
-                    onClick={() => handleQuantityChange(item._id, item.quantity + 1)}
+                    onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                   >
                     <FaPlus />
                   </button>
                 </div>
                 
                 <div className="item-total">
-                  ₹{(item.product.discountPrice || item.product.price) * item.quantity}
+                  ${(item.price * item.quantity).toFixed(2)}
                 </div>
                 
                 <button 
                   className="remove-btn"
-                  onClick={() => handleRemoveItem(item._id)}
+                  onClick={() => handleRemoveItem(item.id)}
                 >
                   <FaTrash />
                 </button>

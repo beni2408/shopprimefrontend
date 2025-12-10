@@ -18,8 +18,9 @@ const ProductDetail = () => {
 
   const fetchProduct = async () => {
     try {
-      const res = await axios.get(`/api/products/${id}`);
-      setProduct(res.data);
+      const res = await fetch(`https://fakestoreapi.com/products/${id}`);
+      const product = await res.json();
+      setProduct(product);
     } catch (error) {
       console.error('Error fetching product:', error);
     } finally {
@@ -28,12 +29,7 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
-    if (!isAuthenticated) {
-      toast.error('Please login to add items to cart');
-      return;
-    }
-    
-    const result = await addToCart(product._id);
+    const result = await addToCart(product);
     if (result.success) {
       toast.success('Product added to cart!');
     } else {
@@ -54,8 +50,8 @@ const ProductDetail = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
         <div>
           <img 
-            src={product.images[0] || '/placeholder.jpg'} 
-            alt={product.name}
+            src={product.image || '/placeholder.jpg'} 
+            alt={product.title}
             style={{ width: '100%', borderRadius: '8px' }}
             onError={(e) => {
               e.target.src = '/placeholder.jpg';
@@ -64,41 +60,29 @@ const ProductDetail = () => {
         </div>
         
         <div>
-          <h1>{product.name}</h1>
-          <p style={{ color: '#666', marginBottom: '1rem' }}>{product.brand}</p>
+          <h1>{product.title}</h1>
+          <p style={{ color: '#666', marginBottom: '1rem' }}>{product.category}</p>
           
           <div style={{ marginBottom: '1rem' }}>
-            {product.discountPrice ? (
-              <>
-                <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#28a745' }}>
-                  ₹{product.discountPrice}
-                </span>
-                <span style={{ textDecoration: 'line-through', color: '#666', marginLeft: '1rem' }}>
-                  ₹{product.price}
-                </span>
-              </>
-            ) : (
-              <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#28a745' }}>
-                ₹{product.price}
-              </span>
-            )}
+            <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#28a745' }}>
+              ${product.price}
+            </span>
           </div>
           
-          <p style={{ marginBottom: '1rem' }}>⭐ {product.averageRating.toFixed(1)} ({product.reviews.length} reviews)</p>
+          <p style={{ marginBottom: '1rem' }}>⭐ {product.rating?.rate || 0} ({product.rating?.count || 0} reviews)</p>
           
           <p style={{ marginBottom: '2rem' }}>{product.description}</p>
           
           <button 
             className="btn btn-primary"
             onClick={handleAddToCart}
-            disabled={product.stock === 0}
             style={{ marginRight: '1rem' }}
           >
-            {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+            Add to Cart
           </button>
           
-          <p style={{ marginTop: '1rem', color: product.stock > 0 ? '#28a745' : '#dc3545' }}>
-            {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+          <p style={{ marginTop: '1rem', color: '#28a745' }}>
+            In stock
           </p>
         </div>
       </div>

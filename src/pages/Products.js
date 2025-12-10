@@ -25,9 +25,13 @@ const Products = () => {
   useEffect(() => {
     // Get filters from URL params
     const category = searchParams.get('category');
-    if (category) {
-      setFilters(prev => ({ ...prev, category }));
-    }
+    const search = searchParams.get('search');
+    
+    setFilters(prev => ({
+      ...prev,
+      category: category || '',
+      search: search || ''
+    }));
     
     fetchProducts();
     fetchCategories();
@@ -40,14 +44,38 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
+      let url = 'https://fakestoreapi.com/products';
       
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
+      if (filters.category) {
+        url = `https://fakestoreapi.com/products/category/${filters.category}`;
+      }
       
-      const res = await axios.get(`/api/products?${params}`);
-      setProducts(res.data.products);
+      const res = await fetch(url);
+      let products = await res.json();
+      
+      // Apply filters
+      if (filters.search) {
+        products = products.filter(p => 
+          p.title.toLowerCase().includes(filters.search.toLowerCase())
+        );
+      }
+      
+      if (filters.minPrice) {
+        products = products.filter(p => p.price >= Number(filters.minPrice));
+      }
+      
+      if (filters.maxPrice) {
+        products = products.filter(p => p.price <= Number(filters.maxPrice));
+      }
+      
+      // Apply sorting
+      if (filters.sort === 'price_low') {
+        products.sort((a, b) => a.price - b.price);
+      } else if (filters.sort === 'price_high') {
+        products.sort((a, b) => b.price - a.price);
+      }
+      
+      setProducts(products);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -57,8 +85,9 @@ const Products = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get('/api/products/categories/all');
-      setCategories(res.data);
+      const res = await fetch('https://fakestoreapi.com/products/categories');
+      const cats = await res.json();
+      setCategories(cats);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
@@ -68,13 +97,8 @@ const Products = () => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleAddToCart = async (productId) => {
-    if (!isAuthenticated) {
-      toast.error('Please login to add items to cart');
-      return;
-    }
-    
-    const result = await addToCart(productId);
+  const handleAddToCart = async (product) => {
+    const result = await addToCart(product);
     if (result.success) {
       toast.success('Product added to cart!');
     } else {
@@ -141,12 +165,12 @@ const Products = () => {
               </div>
             ) : (
               products.map(product => (
-                <div key={product._id} className="product-card">
-                  <Link to={`/products/${product._id}`} className="product-link">
+                <div key={product.id} className="product-card">
+                  <Link to={`/products/${product.id}`} className="product-link">
                     <div className="product-image">
                       <img 
-                        src={product.images[0] || '/placeholder.jpg'} 
-                        alt={product.name}
+                        src={product.image || '/placeholder.jpg'} 
+                        alt={product.title}
                         onError={(e) => {
                           e.target.src = '/placeholder.jpg';
                         }}
@@ -154,32 +178,24 @@ const Products = () => {
                     </div>
                     
                     <div className="product-info">
-                      <h3>{product.name}</h3>
-                      <p className="product-brand">{product.brand}</p>
+                      <h3>{product.title}</h3>
+                      <p className="product-brand">{product.category}</p>
                       
                       <div className="product-price">
-                        {product.discountPrice ? (
-                          <>
-                            <span className="discount-price">₹{product.discountPrice}</span>
-                            <span className="original-price">₹{product.price}</span>
-                          </>
-                        ) : (
-                          <span className="price">₹{product.price}</span>
-                        )}
+                        <span className="price">${product.price}</span>
                       </div>
                       
                       <div className="product-rating">
-                        ⭐ {product.averageRating.toFixed(1)} ({product.reviews.length})
+                        ⭐ {product.rating?.rate || 0} ({product.rating?.count || 0})
                       </div>
                     </div>
                   </Link>
                   
                   <button 
                     className="btn btn-primary add-to-cart-btn"
-                    onClick={() => handleAddToCart(product._id)}
-                    disabled={product.stock === 0}
+                    onClick={() => handleAddToCart(product)}
                   >
-                    {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                    Add to Cart
                   </button>
                 </div>
               ))
